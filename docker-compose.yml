@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mydb
+    volumes:
+      - my-site_pg:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # <-- Новый файл (инициализация)
+    networks:
+      - my-net
+
+  api:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_USER: admin
+      DB_PASSWORD: secret
+      DB_NAME: mydb
+    depends_on:
+      - db
+    networks:
+      - my-net
+
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - api
+    networks:
+      - my-net
+
+volumes:
+  my-site_pg:
+    driver: local
+
+networks:
+  my-net:
+    driver: bridge
